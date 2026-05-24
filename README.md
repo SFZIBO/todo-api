@@ -360,12 +360,3 @@ curl -s -X POST "$BASE/todos" -H 'Content-Type: application/json' -H "Authorizat
 
 curl -s -H "Authorization: Bearer $TOKEN" "$BASE/todos" | jq
 ```
-
----
-
-Jika Anda ingin, saya bisa:
-- Menambahkan file `POSTMAN_COLLECTION.json` untuk import ke Postman
-- Menambahkan `Makefile` atau skrip `run.sh` untuk dev convenience
-- Menambahkan environment variable support (`PORT`, `JWT_SECRET`, `DB_PATH`)
-
-Mau saya tambahkan salah satu dari hal tersebut sekarang?  
