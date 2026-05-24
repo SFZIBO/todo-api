@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo API Tester</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: monospace; background: #0f0f0f; color: #e0e0e0; padding: 20px; }
+    h1 { color: #00ff88; margin-bottom: 20px; }
+    h2 { color: #88aaff; margin: 20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 15px; }
+    input, textarea { 
+      width: 100%; padding: 8px; margin: 5px 0 10px; 
+      background: #111; border: 1px solid #444; color: #e0e0e0; 
+      border-radius: 4px; font-family: monospace;
+    }
+    button {
+      padding: 8px 16px; border: none; border-radius: 4px; 
+      cursor: pointer; font-family: monospace; font-weight: bold;
+    }
+    .btn-green { background: #00ff88; color: #000; }
+    .btn-blue  { background: #4488ff; color: #fff; }
+    .btn-red   { background: #ff4444; color: #fff; }
+    .btn-yellow{ background: #ffaa00; color: #000; }
+    #response { 
+      background: #111; border: 1px solid #444; border-radius: 4px; 
+      padding: 15px; white-space: pre-wrap; font-size: 12px; min-height: 200px;
+      overflow-y: auto; max-height: 400px;
+    }
+    #token-display { color: #00ff88; font-size: 11px; word-break: break-all; }
+    label { font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>📋 Todo API Tester</h1>
+  <p>Token tersimpan: <span id="token-display">Belum login</span></p>
+
+  <div class="grid">
+
+    <!-- Autentikasi -->
+    <div>
+      <h2>🔐 Autentikasi</h2>
+      <div class="card">
+        <label>Register Pengguna Baru</label><br>
+        <input id="reg-name" placeholder="Nama" />
+        <input id="reg-email" placeholder="Email" />
+        <input id="reg-pass" placeholder="Password" type="password" />
+        <button class="btn-green" onclick="register()">Register →</button>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <label>Login</label><br>
+        <input id="login-email" placeholder="Email" />
+        <input id="login-pass" placeholder="Password" type="password" />
+        <button class="btn-blue" onclick="login()">Login →</button>
+      </div>
+    </div>
+
+    <!-- Todo CRUD -->
+    <div>
+      <h2>✅ Todo CRUD</h2>
+      <div class="card">
+        <button class="btn-blue" onclick="getTodos()" style="width:100%;margin-bottom:8px">
+          GET Semua Todo
+        </button>
+        <input id="todo-id" placeholder="ID Todo (untuk GET/UPDATE/DELETE)" />
+        <button class="btn-blue" onclick="getTodo()">GET Satu Todo</button>
+        <hr style="border-color:#333;margin:10px 0">
+        <input id="todo-title" placeholder="Title todo baru" />
+        <textarea id="todo-desc" placeholder="Deskripsi (opsional)" rows="2"></textarea>
+        <button class="btn-green" onclick="createTodo()">POST Buat Todo</button>
+        <hr style="border-color:#333;margin:10px 0">
+        <input id="upd-title" placeholder="Title baru (kosongkan jika tidak diubah)" />
+        <select id="upd-completed" style="width:100%;padding:8px;margin:5px 0 10px;background:#111;border:1px solid #444;color:#e0e0e0;border-radius:4px">
+          <option value="">-- Status (opsional) --</option>
+          <option value="false">Belum selesai</option>
+          <option value="true">Sudah selesai</option>
+        </select>
+        <button class="btn-yellow" onclick="updateTodo()">PUT Update Todo</button>
+        <button class="btn-red" onclick="deleteTodo()" style="margin-left:8px">DELETE Hapus</button>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>📨 Response</h2>
+  <div id="response">Response akan muncul di sini...</div>
+
+  <script>
+    const BASE = 'http://localhost:8080/api';
+    let token = '';
+
+    // Tampilkan response JSON di kotak bawah
+    function show(data) {
+      document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Header untuk request yang butuh autentikasi
+    function authHeader() {
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+    }
+
+    async function register() {
+      const res = await fetch(`${BASE}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('reg-name').value,
+          email: document.getElementById('reg-email').value,
+          password: document.getElementById('reg-pass').value,
+        })
+      });
+      show(await res.json());
+    }
+
+    async function login() {
+      const res = await fetch(`${BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('login-email').value,
+          password: document.getElementById('login-pass').value,
+        })
+      });
+      const data = await res.json();
+      if (data.token) {
+        token = data.token;
+        document.getElementById('token-display').textContent = token.substring(0, 40) + '...';
+      }
+      show(data);
+    }
+
+    async function getTodos() {
+      const res = await fetch(`${BASE}/todos`, { headers: authHeader() });
+      show(await res.json());
+    }
+
+    async function getTodo() {
+      const id = document.getElementById('todo-id').value;
+      const res = await fetch(`${BASE}/todos/${id}`, { headers: authHeader() });
+      show(await res.json());
+    }
+
+    async function createTodo() {
+      const res = await fetch(`${BASE}/todos`, {
+        method: 'POST',
+        headers: authHeader(),
+        body: JSON.stringify({
+          title: document.getElementById('todo-title').value,
+          description: document.getElementById('todo-desc').value,
+        })
+      });
+      show(await res.json());
+    }
+
+    async function updateTodo() {
+      const id = document.getElementById('todo-id').value;
+      const body = {};
+      const title = document.getElementById('upd-title').value;
+      const completed = document.getElementById('upd-completed').value;
+      if (title) body.title = title;
+      if (completed !== '') body.completed = completed === 'true';
+
+      const res = await fetch(`${BASE}/todos/${id}`, {
+        method: 'PUT',
+        headers: authHeader(),
+        body: JSON.stringify(body)
+      });
+      show(await res.json());
+    }
+
+    async function deleteTodo() {
+      const id = document.getElementById('todo-id').value;
+      const res = await fetch(`${BASE}/todos/${id}`, {
+        method: 'DELETE',
+        headers: authHeader()
+      });
+      show(await res.json());
+    }
+  </script>
+</body>
+</html>
